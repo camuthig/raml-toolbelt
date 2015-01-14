@@ -1,6 +1,6 @@
 {
   "name": "raml",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "Command line tools for RAML developers",
   "author": "Aldo Bucchi <aldo.bucchi@gmail.com>",
   "main": "src/main.js",
