@@ -1,0 +1,6 @@
+[submodule "api-designer"]
+	path = api-designer
+	url = https://github.com/mulesoft/api-designer.git
+[submodule "api-console"]
+	path = api-console
+	url = https://github.com/mulesoft/api-console
