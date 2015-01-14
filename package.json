@@ -5,6 +5,10 @@
   "author": "Aldo Bucchi <aldo.bucchi@gmail.com>",
   "main": "src/main.js",
   "preferGlobal": true,
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:raml-org/raml-toolbelt.git"
+  },
   "bin": {
     "raml": "src/main.js"
   },
