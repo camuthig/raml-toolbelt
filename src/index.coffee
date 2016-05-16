@@ -7,9 +7,9 @@ pkg         = require path.resolve __dirname, '../package.json'
 fs          = require 'fs'
 raml_parser = require 'raml-parser'
 
-app         = express()
 
-PORT        = 10500
+app         = express()
+SPEC        = ''
 
 starts_with = ( str, search ) -> 0 is str.indexOf search
 file_or_url_to_absolute = ( file ) ->
@@ -18,23 +18,28 @@ file_or_url_to_absolute = ( file ) ->
   else
     path.resolve process.cwd(), file
 
+create_html = (raml_url) -> """
+    </html>
+    <head>
+      <link rel="stylesheet" href="/api-console/styles/api-console-light-theme.css" type="text/css" />
+    </head>
+    <body ng-app="ramlConsoleApp" ng-cloak>
+      <script src="/api-console/scripts/api-console-vendor.js"></script>
+      <script type="text/javascript" src="/api-console/scripts/api-console.js"></script>
+      <script type="text/javascript">
+        $.noConflict();
+      </script>
+
+      <div style="overflow: auto; position: relative">
+        <raml-console src="#{raml_url}" />
+      </div>
+    </body>
+    </html>
+  """
+
 launch_webapp = ( port, cb ) ->
   app.get '/', (req, res) ->
-    raml_url = req.query.url
-    html = """
-        <html>
-        <head>
-            <link rel="stylesheet" href="/api-console/styles/app.css" type="text/css" />
-        </head>
-        <body ng-app="ramlConsoleApp" ng-cloak id="raml-console-unembedded">
-            <script src="/api-console/scripts/vendor.js"></script>
-            <script src="/api-console/scripts/app.js"></script>
-            <div style="overflow: auto; position: relative">
-                <raml-console src="#{raml_url}"/>
-            </div>
-        </body>
-        </html>
-      """
+    html = create_html(SPEC)
     res.send html
   app.use '/api-console',  express.static path.resolve __dirname, '../api-console/dist'
   app.use '/api-designer', express.static path.resolve __dirname, '../api-designer/dist'
@@ -45,29 +50,57 @@ launch_webapp = ( port, cb ) ->
 webapp_is_listening = ( port, cb ) -> request "http://localhost:#{port}/~raml-is", (e, r, b) -> cb null, b is 'awesome'
 launch_webapp_once  = ( port, cb ) -> webapp_is_listening port, (e, r) -> if r then cb() else launch_webapp port, cb
 
-args = process.argv.slice 2
+test = (ramlObj) ->
+  ramljsonexpander = require('raml-jsonschema-expander')
+  yaml             = require('js-yaml')
 
-if args.length isnt 2
-  console.log 'usage: raml console {file or url}'
-  process.exit()
+  console.log 'Expanding references'
+  expanded = ramljsonexpander.expandJsonSchemas ramlObj
 
-switch args[0]
-  when 'console'
-    launch_webapp_once PORT, ->
-      file = file_or_url_to_absolute args[1]
-      spawn 'open', [ "http://localhost:#{PORT}/?url=" + encodeURIComponent file ]
-  when 'edit'
-    null
-  when 'validate'
-    file = file_or_url_to_absolute args[1]
+  console.log 'Converting back to yaml'
+  yml = yaml.safeDump expanded, {skipInvalid: true}
+
+  console.log 'Writing minified spec'
+  fs.writeFile 'test.yml', "#%RAML 0.8\n"
+  fs.appendFile 'test.yml', yml
+  # Return the promise with the html
+  Q.fcall ->
+    yml
+  
+
+program
+  .version(pkg.version)
+
+program
+  .command 'console <file>'
+  .description 'Run a console for the given specification file. The file can be a relative path or URL.'
+  .option '-p, --port <number>', 'Port to run on', 10500
+  .action (spec, options) ->
+    launch_webapp_once options.port, ->
+      SPEC = file_or_url_to_absolute spec
+      spawn 'open', [ "http://localhost:#{options.port}/"]
+
+program
+  .command 'validate <file>'
+  .description 'Validate the RAML. The file can be either a relative path or URL.'
+  .action (spec, options) ->
+    ramljsonexpander = require('raml-jsonschema-expander');
     nok = ( err )  -> console.error JSON.stringify err, null, 2
     ok  = ( node ) -> console.log "Successfully parsed RAML"
     raml_parser.composeFile( file ).then ok, nok
 
-###
 program
-  .version(pkg.version)
-  .option('-p, --port <port>', 'Port (defaults to 10556)', parseInt)
-  .parse(process.argv)
-port = program.port or 10556
-###
+  .command 'minify <file>'
+  .description 'Minify a RAML file with possibly references to a single file'
+  .action (spec, options) ->
+    raml2obj = require('raml2obj')
+    raml2obj.parse file_or_url_to_absolute spec 
+    .then (obj) ->
+      test obj
+    
+
+program.parse(process.argv);
+
+# console.log(process.argv.slice(2).length)
+if process.argv.slice(2).length == 0
+  program.outputHelp((txt) -> return txt)

@@ -22,10 +22,12 @@
   "dependencies": {
     "commander": "^2.6.0",
     "express": "^4.10.8",
+    "js-yaml": "^3.6.1",
+    "raml-jsonschema-expander": "^1.0.2",
     "raml-parser": "^0.8.9",
+    "raml2obj": "^2.2.0",
     "request": "^2.51.0",
-    "underscore": "~1.7.0",
-    "ut": "0.0.1"
+    "underscore": "~1.7.0"
   },
   "devDependencies": {
     "mocha": "~2.0.1",
