@@ -108,14 +108,6 @@
     return raml_parser.composeFile(file).then(ok, nok);
   });
 
-  program.command('minify <file>').description('Minify a RAML file with possibly references to a single file').action(function(spec, options) {
-    var raml2obj;
-    raml2obj = require('raml2obj');
-    return raml2obj.parse(file_or_url_to_absolute(spec)).then(function(obj) {
-      return test(obj);
-    });
-  });
-
   program.parse(process.argv);
 
   if (process.argv.slice(2).length === 0) {

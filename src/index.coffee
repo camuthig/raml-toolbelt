@@ -88,15 +88,6 @@ program
     nok = ( err )  -> console.error JSON.stringify err, null, 2
     ok  = ( node ) -> console.log "Successfully parsed RAML"
     raml_parser.composeFile( file ).then ok, nok
-
-program
-  .command 'minify <file>'
-  .description 'Minify a RAML file with possibly references to a single file'
-  .action (spec, options) ->
-    raml2obj = require('raml2obj')
-    raml2obj.parse file_or_url_to_absolute spec 
-    .then (obj) ->
-      test obj
     
 
 program.parse(process.argv);
