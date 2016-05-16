@@ -50,24 +50,6 @@ launch_webapp = ( port, cb ) ->
 webapp_is_listening = ( port, cb ) -> request "http://localhost:#{port}/~raml-is", (e, r, b) -> cb null, b is 'awesome'
 launch_webapp_once  = ( port, cb ) -> webapp_is_listening port, (e, r) -> if r then cb() else launch_webapp port, cb
 
-test = (ramlObj) ->
-  ramljsonexpander = require('raml-jsonschema-expander')
-  yaml             = require('js-yaml')
-
-  console.log 'Expanding references'
-  expanded = ramljsonexpander.expandJsonSchemas ramlObj
-
-  console.log 'Converting back to yaml'
-  yml = yaml.safeDump expanded, {skipInvalid: true}
-
-  console.log 'Writing minified spec'
-  fs.writeFile 'test.yml', "#%RAML 0.8\n"
-  fs.appendFile 'test.yml', yml
-  # Return the promise with the html
-  Q.fcall ->
-    yml
-  
-
 program
   .version(pkg.version)
 
@@ -84,6 +66,7 @@ program
   .command 'validate <file>'
   .description 'Validate the RAML. The file can be either a relative path or URL.'
   .action (spec, options) ->
+    file = file_or_url_to_absolute spec
     ramljsonexpander = require('raml-jsonschema-expander');
     nok = ( err )  -> console.error JSON.stringify err, null, 2
     ok  = ( node ) -> console.log "Successfully parsed RAML"
